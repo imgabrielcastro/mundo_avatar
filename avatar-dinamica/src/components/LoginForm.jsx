@@ -29,7 +29,7 @@ export default function LoginForm() {
       position="relative"
       sx={{ backgroundColor: '#f3f3f3' }}
     >
-      <Paper elevation={4} sx={{ padding: 4, maxWidth: 350 }}>
+      <Paper elevation={4} sx={{ padding: 4, maxWidth: 500 }}>
         <form onSubmit={handleLogin}>
           <Typography variant="h5" align="center" mb={3} sx={{ color: '#9A1FFF' }}>
             Login do Líder
