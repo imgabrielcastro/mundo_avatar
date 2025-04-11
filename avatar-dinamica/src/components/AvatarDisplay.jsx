@@ -1,155 +1,127 @@
-// src/components/AvatarDisplay.jsx
+// src/components/AvatarVisualizacao.jsx
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Divider } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { supabase } from '../services/supabaseClient';
 import userImages from '../assets/users/userImages';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@uidotdev/usehooks';
 
 const ELEMENTOS = [
-  { key: 'fogo', label: '🔥 Fogo', cor: '#ff6b6b', anim: 'fire' },
-  { key: 'agua', label: '🌊 Água', cor: '#00bcd4', anim: 'water' },
-  { key: 'terra', label: '🪨 Terra', cor: '#795548', anim: 'earth' },
-  { key: 'ar', label: '💨 Ar', cor: '#9e9e9e', anim: 'air' }
+  { key: 'fogo', label: 'Fogo', fundo: require('../assets/users/fogo.png') },
+  { key: 'agua', label: 'Água', fundo: require('../assets/users/agua.png') },
+  { key: 'terra', label: 'Terra', fundo: require('../assets/users/terra.png') },
+  { key: 'ar', label: 'Ar', fundo: require('../assets/users/ar.png') }
 ];
 
-export default function AvatarDisplay() {
+export default function AvatarVisualizacao() {
   const [registro, setRegistro] = useState(null);
   const { width, height } = useWindowSize();
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('dinamica_avatar')
         .select('*')
         .order('data_win', { ascending: false })
         .limit(1);
-      if (!error && data.length > 0) {
-        setRegistro(data[0]);
-      }
+
+      if (data && data.length > 0) setRegistro(data[0]);
     };
 
     fetchData();
   }, []);
 
   const avatarNome = registro?.avatar;
-  const avatarImage = userImages[avatarNome] || null;
-  const dataFormatada = registro?.data_win
-    ? new Date(registro.data_win).toLocaleDateString()
-    : '';
+  const dataFormatada = registro?.data_win ? new Date(registro.data_win).toLocaleDateString() : '';
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        backgroundColor: '#f7f7f7',
-        p: 4,
-        position: 'relative',
-        overflow: 'hidden'
-      }}
-    >
-      {avatarNome && (
-        <Confetti width={width} height={height} recycle={false} numberOfPieces={300} />
-      )}
+    <Box sx={{ width: '100vw', height: '100vh', display: 'flex', position: 'relative' }}>
+      {avatarNome && <Confetti width={width} height={height} numberOfPieces={300} />}
 
-      <Typography variant="h4" align="center" mb={3} sx={{ fontWeight: 'bold', color: '#9A1FFF' }}>
-        Vencedores da Dinâmica - {dataFormatada}
-      </Typography>
-
+      {/* Avatar no centro (se houver) */}
       {avatarNome && (
-        <Box textAlign="center" mb={5}>
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            🌀 Avatar da Semana
-          </Typography>
+        <Box
+          position="absolute"
+          top="50%"
+          left="50%"
+          sx={{
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10,
+            textAlign: 'center',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            p: 2,
+            borderRadius: 4,
+            boxShadow: '0 0 30px 10px rgba(154,31,255,0.6)',
+            backdropFilter: 'blur(8px)'
+          }}
+        >
           <img
-            src={avatarImage}
-            alt={avatarNome}
-            style={{ width: 180, height: 180, borderRadius: '50%', objectFit: 'cover' }}
+            src={require('../assets/avatar.png')}
+            alt="Avatar"
+            style={{ width: 180, height: 180, borderRadius: '50%', objectFit: 'cover', marginBottom: 8 }}
           />
-          <Typography variant="h6" mt={1} sx={{ color: '#9A1FFF', fontWeight: 'bold' }}>
-            {avatarNome}
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#fff' }}>
+            Avatar da Semana: {avatarNome}
           </Typography>
         </Box>
       )}
 
-      <Divider sx={{ mb: 4 }} />
+      {/* Colunas dos elementos */}
+      {ELEMENTOS.map(({ key, label, fundo }, index) => {
+        const nome = registro?.[key] || 'Nenhum';
+        const imagem = userImages[nome] || userImages['Nenhum'];
 
-      <Box
-        display="grid"
-        gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }}
-        gap={4}
-      >
-        {ELEMENTOS.map(({ key, label, cor, anim }) => {
-          const nome = registro?.[key] || 'Nenhum';
-          const imagem = userImages[nome] || userImages['Nenhum'];
-
-          return (
-            <Paper
-              key={key}
-              elevation={3}
-              className={`element-card ${anim}`}
-              sx={{
-                padding: 3,
-                textAlign: 'center',
-                borderTop: `6px solid ${cor}`,
-                borderRadius: 3,
-                backgroundColor: '#fff',
-                position: 'relative',
-              }}
-            >
-              <Typography variant="h6" sx={{ color: cor, mb: 2 }}>
-                {label}
-              </Typography>
+        return (
+          <Box
+            key={key}
+            sx={{
+              flex: 1,
+              backgroundImage: `url(${fundo})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              py: 4,
+              position: 'relative',
+              color: '#fff',
+              textShadow: '2px 2px 4px #000',
+              borderLeft: index !== 0 ? '2px solid rgba(255, 255, 255, 0.3)' : 'none'
+            }}
+          >
+            <Typography variant="h4" fontWeight="bold" sx={{ textTransform: 'uppercase' }}>
+              {label}
+            </Typography>
+            <Box sx={{ textAlign: 'center' }}>
               <Box
                 component="img"
                 src={imagem}
                 alt={nome}
                 sx={{
-                  width: 140,
-                  height: 140,
+                  width: 200,
+                  height: 200,
                   borderRadius: '50%',
+                  border: '6px solid white',
                   objectFit: 'cover',
-                  mb: 2
+                  mb: 1
                 }}
               />
-              <Typography variant="subtitle1" fontWeight="bold">
-                {nome}
-              </Typography>
-            </Paper>
-          );
-        })}
+              <Typography variant="h6" fontWeight="bold">{nome}</Typography>
+            </Box>
+          </Box>
+        );
+      })}
+
+      {/* Rodapé opcional */}
+      <Box
+        position="absolute"
+        bottom={10}
+        left={10}
+        sx={{ color: '#fff', opacity: 0.6 }}
+      >
+        <Typography variant="caption">Dinâmica realizada em: {dataFormatada}</Typography>
       </Box>
-
-      {/* Animações básicas via CSS */}
-      <style>{`
-        .fire { animation: flicker 0.7s infinite alternate; }
-        .water { animation: wave 2s infinite ease-in-out; }
-        .earth { animation: pulse 2s infinite ease-in-out; }
-        .air { animation: float 3s infinite ease-in-out; }
-
-        @keyframes flicker {
-          from { transform: scale(1); }
-          to { transform: scale(1.03) rotate(0.5deg); }
-        }
-
-        @keyframes wave {
-          0% { transform: translateY(0); }
-          50% { transform: translateY(5px); }
-          100% { transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.02); }
-          100% { transform: scale(1); }
-        }
-
-        @keyframes float {
-          0% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-          100% { transform: translateY(0); }
-        }
-      `}</style>
     </Box>
   );
 }
