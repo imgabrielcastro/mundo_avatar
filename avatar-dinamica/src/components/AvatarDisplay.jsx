@@ -1,8 +1,6 @@
-// src/components/AvatarVisualizacao.jsx
 import React, { useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { supabase } from '../services/supabaseClient';
-import userImages from '../assets/users/userImages';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@uidotdev/usehooks';
 
@@ -15,10 +13,12 @@ const ELEMENTOS = [
 
 export default function AvatarVisualizacao() {
   const [registro, setRegistro] = useState(null);
+  const [funcionarios, setFuncionarios] = useState([]);
   const { width, height } = useWindowSize();
 
   useEffect(() => {
     const fetchData = async () => {
+      // Pega a dinâmica mais recente
       const { data } = await supabase
         .from('dinamica_avatar')
         .select('*')
@@ -28,7 +28,14 @@ export default function AvatarVisualizacao() {
       if (data && data.length > 0) setRegistro(data[0]);
     };
 
+    const fetchFuncionarios = async () => {
+      // Pega todos os funcionários da tabela
+      const { data } = await supabase.from('funcionarios').select('nome, img');
+      if (data) setFuncionarios(data);
+    };
+
     fetchData();
+    fetchFuncionarios();
   }, []);
 
   const avatarNome = registro?.avatar;
@@ -56,7 +63,7 @@ export default function AvatarVisualizacao() {
           }}
         >
           <img
-            src={require('../assets/avatar.png')}
+            src={registro?.img || require('../assets/avatar.png')}
             alt="Avatar"
             style={{ width: 180, height: 180, borderRadius: '50%', objectFit: 'cover', marginBottom: 8 }}
           />
@@ -69,7 +76,8 @@ export default function AvatarVisualizacao() {
       {/* Colunas dos elementos */}
       {ELEMENTOS.map(({ key, label, fundo }, index) => {
         const nome = registro?.[key] || 'Nenhum';
-        const imagem = userImages[nome] || userImages['Nenhum'];
+        // Pega a imagem correspondente do funcionário na tabela de funcionários
+        const funcionario = funcionarios.find(f => f.nome === nome) || { img: require('../assets/users/nenhum.png') };
 
         return (
           <Box
@@ -96,7 +104,7 @@ export default function AvatarVisualizacao() {
             <Box sx={{ textAlign: 'center' }}>
               <Box
                 component="img"
-                src={imagem}
+                src={funcionario.img}
                 alt={nome}
                 sx={{
                   width: 200,

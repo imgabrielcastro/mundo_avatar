@@ -1,4 +1,3 @@
-// src/components/AdminPanel.jsx
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -18,7 +17,7 @@ import {
 import { supabase } from '../services/supabaseClient';
 
 export default function AdminPanel() {
-  const [tab, setTab] = useState(1); // Alterado para "Gerenciar" ser a aba aberta por padrão
+  const [tab, setTab] = useState(0); // "Cadastrar Dinâmica" é a aba aberta por padrão
   const [fogo, setFogo] = useState('');
   const [agua, setAgua] = useState('');
   const [terra, setTerra] = useState('');
@@ -30,8 +29,7 @@ export default function AdminPanel() {
   const [registros, setRegistros] = useState([]);
   const [funcionarios, setFuncionarios] = useState([]);
   const [nomeFuncionario, setNomeFuncionario] = useState('');
-  const [fotoFuncionario, setFotoFuncionario] = useState(null);
-  const [fotoPreview, setFotoPreview] = useState(null); // Para a pré-visualização da imagem
+  const [fotoFuncionarioUrl, setFotoFuncionarioUrl] = useState('');
   const [loading, setLoading] = useState(false); // Para controlar o estado de loading durante o upload
 
   useEffect(() => {
@@ -63,40 +61,24 @@ export default function AdminPanel() {
 
   const fetchFuncionarios = async () => {
     const { data, error } = await supabase
-      .from('funcionarios') // Supondo que a tabela de funcionários seja 'funcionarios'
-      .select('id, nome, imagem_url');
+      .from('funcionarios')
+      .select('id, nome, img');
     if (!error) setFuncionarios(data);
   };
 
   const handleCadastrarFuncionario = async () => {
-    if (!nomeFuncionario || !fotoFuncionario) {
-      alert('Nome e Foto são obrigatórios!');
+    if (!nomeFuncionario || !fotoFuncionarioUrl) {
+      alert('Nome e URL da Foto são obrigatórios!');
       return;
     }
 
     setLoading(true);
 
-    // Fazer upload da foto do funcionário para o Supabase Storage no bucket 'funcionarios'
-    const { data, error } = await supabase.storage
-      .from('funcionarios') // Nome do bucket
-      .upload(`public/${fotoFuncionario.name}`, fotoFuncionario); // Upload na pasta 'public/'
-
-    if (error) {
-      alert('Erro ao fazer upload da foto: ' + error.message);
-      setLoading(false);
-      return;
-    }
-
-    // Pegar a URL pública da foto após o upload
-    const urlFoto = data?.path
-      ? `https://ndrdaembejcfyfjaifze.supabase.co/storage/v1/object/public/funcionarios/${data.path}` // URL pública da imagem
-      : '';
-
     const { error: insertError } = await supabase
       .from('funcionarios')
       .insert([{
         nome: nomeFuncionario,
-        imagem_url: urlFoto,
+        img: fotoFuncionarioUrl,
       }]);
 
     setLoading(false);
@@ -106,9 +88,25 @@ export default function AdminPanel() {
     } else {
       alert('Funcionário cadastrado com sucesso!');
       setNomeFuncionario('');
-      setFotoFuncionario(null);
-      setFotoPreview(null); // Limpa o preview da foto
-      fetchFuncionarios(); // Atualiza a lista de funcionários
+      setFotoFuncionarioUrl('');
+      fetchFuncionarios();
+    }
+  };
+
+  const handleDeleteFuncionario = async (id) => {
+    const confirm = window.confirm("Tem certeza que deseja excluir este funcionário?");
+    if (!confirm) return;
+
+    const { error } = await supabase
+      .from('funcionarios')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert('Erro ao deletar funcionário: ' + error.message);
+    } else {
+      alert('Funcionário deletado com sucesso!');
+      fetchFuncionarios();
     }
   };
 
@@ -182,7 +180,65 @@ export default function AdminPanel() {
     setEditId(null);
   };
 
-  const Formulario = () => (
+  const FormularioCadastroFuncionario = () => (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        Cadastrar Novo Funcionário
+      </Typography>
+      <TextField
+        label="Nome do Funcionário"
+        fullWidth
+        value={nomeFuncionario}
+        onChange={(e) => setNomeFuncionario(e.target.value)}
+        sx={{ mb: 2 }}
+      />
+      <TextField
+        label="URL da Foto"
+        fullWidth
+        value={fotoFuncionarioUrl}
+        onChange={(e) => setFotoFuncionarioUrl(e.target.value)}
+        sx={{ mb: 2 }}
+      />
+      <Box display="flex" gap={2} mt={2}>
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={handleCadastrarFuncionario}
+          sx={{
+            backgroundColor: '#9A1FFF',
+            color: '#fff',
+            '&:hover': { backgroundColor: '#8014d8' }
+          }}
+        >
+          {loading ? <CircularProgress size={24} color="inherit" /> : 'Cadastrar Funcionário'}
+        </Button>
+      </Box>
+      <Divider sx={{ my: 3 }} />
+      <Typography variant="h6" gutterBottom>
+        Funcionários Cadastrados
+      </Typography>
+      {funcionarios.map((funcionario) => (
+        <Box key={funcionario.id} sx={{ mb: 3, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            {funcionario.nome}
+          </Typography>
+          <img src={funcionario.img} alt="Foto do Funcionário" width={120} height={120} style={{ borderRadius: '50%' }} />
+          <Box mt={2} display="flex" gap={2}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => handleDeleteFuncionario(funcionario.id)}
+              sx={{ color: '#9A1FFF', borderColor: '#9A1FFF' }}
+            >
+              Excluir Funcionário
+            </Button>
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+
+  const FormularioCadastroDinâmica = () => (
     <>
       {[ 
         { label: '🔥 Fogo', state: fogo, setState: setFogo },
@@ -206,13 +262,8 @@ export default function AdminPanel() {
         </FormControl>
       ))}
 
-      {/* Avatar com brilho */}
       <FormControl fullWidth sx={{ mb: avatar ? 1 : 3 }}>
-        <InputLabel
-          sx={{
-            color: avatar ? '#9A1FFF' : undefined,
-          }}
-        >
+        <InputLabel sx={{ color: avatar ? '#9A1FFF' : undefined }}>
           🌀 Avatar
         </InputLabel>
         <Select
@@ -221,9 +272,7 @@ export default function AdminPanel() {
           disabled
           sx={{
             backgroundColor: avatar ? '#f7edff' : undefined,
-            boxShadow: avatar
-              ? '0 0 12px 4px rgba(154, 31, 255, 0.4)'
-              : 'none',
+            boxShadow: avatar ? '0 0 12px 4px rgba(154, 31, 255, 0.4)' : 'none',
             transition: 'all 0.3s ease-in-out',
             '& .MuiSelect-select': {
               fontWeight: avatar ? 'bold' : 'normal',
@@ -238,17 +287,6 @@ export default function AdminPanel() {
         </Select>
       </FormControl>
 
-      {/* Aviso Avatar */}
-      {avatar && (
-        <Typography
-          align="center"
-          sx={{ mb: 2, color: '#9A1FFF', fontWeight: 600 }}
-        >
-          🎉 {avatar} é o Avatar desta semana!
-        </Typography>
-      )}
-
-      {/* Data */}
       <TextField
         label="📅 Data de Início"
         type="date"
@@ -326,68 +364,50 @@ export default function AdminPanel() {
     >
       <Paper elevation={4} sx={{ p: 4, width: '90%', maxWidth: 700 }}>
         <Tabs value={tab} onChange={(e, val) => setTab(val)} centered sx={{ mb: 3 }}>
-          <Tab label="Cadastrar Funcionário" />
+          <Tab label="Cadastrar Dinâmica" />
           <Tab label="Gerenciar Dinâmica" />
+          <Tab label="Cadastrar Funcionário" />
         </Tabs>
 
         <Divider sx={{ mb: 3 }} />
 
         {tab === 0 ? (
+          <Box>{FormularioCadastroDinâmica()}</Box>
+        ) : tab === 1 ? (
           <Box>
-            <Typography variant="h6" gutterBottom>
-              Cadastrar Novo Funcionário
-            </Typography>
-            <TextField
-              label="Nome do Funcionário"
-              fullWidth
-              value={nomeFuncionario}
-              onChange={(e) => setNomeFuncionario(e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <Button
-              variant="contained"
-              component="label"
-              sx={{
-                backgroundColor: '#9A1FFF',
-                color: '#fff',
-                '&:hover': { backgroundColor: '#8014d8' }
-              }}
-            >
-              Selecionar Foto
-              <input
-                type="file"
-                hidden
-                onChange={e => {
-                  const file = e.target.files[0];
-                  setFotoFuncionario(file);
-                  if (file) {
-                    setFotoPreview(URL.createObjectURL(file));
-                  }
-                }}
-              />
-            </Button>
-            {fotoPreview && (
-              <Box mt={2} sx={{ textAlign: 'center' }}>
-                <img src={fotoPreview} alt="Foto pré-visualizada" width={120} height={120} style={{ borderRadius: '50%' }} />
+            {registros.map((registro) => (
+              <Box key={registro.id} sx={{ mb: 3, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  📅 {registro.data_win}
+                </Typography>
+                <Typography variant="body2">🔥 {registro.fogo || 'Nenhum'}</Typography>
+                <Typography variant="body2">🌊 {registro.agua || 'Nenhum'}</Typography>
+                <Typography variant="body2">🪨 {registro.terra || 'Nenhum'}</Typography>
+                <Typography variant="body2">💨 {registro.ar || 'Nenhum'}</Typography>
+                <Typography variant="body2">🌀 Avatar: {registro.avatar || 'Nenhum'}</Typography>
+                <Box mt={2} display="flex" gap={2}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => handleEdit(registro)}
+                    sx={{ color: '#9A1FFF', borderColor: '#9A1FFF' }}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleDelete(registro.id)}
+                  >
+                    Excluir
+                  </Button>
+                </Box>
               </Box>
-            )}
-            <Box display="flex" gap={2} mt={2}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleCadastrarFuncionario}
-                sx={{
-                  backgroundColor: '#9A1FFF',
-                  color: '#fff',
-                  '&:hover': { backgroundColor: '#8014d8' }
-                }}
-              >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Cadastrar'}
-              </Button>
-            </Box>
+            ))}
           </Box>
         ) : (
-          <Box>{Formulario()}</Box>
+          <Box>{FormularioCadastroFuncionario()}</Box>
         )}
       </Paper>
     </Box>
