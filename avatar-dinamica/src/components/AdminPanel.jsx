@@ -298,7 +298,7 @@ export default function AdminPanel() {
       />
 
       <TextField
-        label="📅 Data da Dinâmica"
+        label="📅 Data do Fim da Dinâmica"
         type="date"
         fullWidth
         sx={{ mb: 3 }}
