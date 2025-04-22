@@ -6,6 +6,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme'; // o tema que você criou
 
+
 import '@fontsource/roboto'; // importa a Roboto corretamente
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

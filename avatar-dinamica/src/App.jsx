@@ -3,6 +3,7 @@ import LoginForm from './components/LoginForm';
 import AdminPanel from './components/AdminPanel';
 import AvatarDisplay from './components/AvatarDisplay';
 
+
 function App() {
   return (
     <BrowserRouter>

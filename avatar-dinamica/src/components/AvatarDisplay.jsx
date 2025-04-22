@@ -18,7 +18,6 @@ export default function AvatarVisualizacao() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Pega a dinâmica mais recente
       const { data } = await supabase
         .from('dinamica_avatar')
         .select('*')
@@ -29,7 +28,6 @@ export default function AvatarVisualizacao() {
     };
 
     const fetchFuncionarios = async () => {
-      // Pega todos os funcionários da tabela
       const { data } = await supabase.from('funcionarios').select('nome, img');
       if (data) setFuncionarios(data);
     };
@@ -39,13 +37,11 @@ export default function AvatarVisualizacao() {
   }, []);
 
   const avatarNome = registro?.avatar;
-  const dataFormatada = registro?.data_win ? new Date(registro.data_win).toLocaleDateString() : '';
 
   return (
     <Box sx={{ width: '100vw', height: '100vh', display: 'flex', position: 'relative' }}>
       {avatarNome && <Confetti width={width} height={height} numberOfPieces={300} />}
 
-      {/* Avatar no centro (se houver) */}
       {avatarNome && (
         <Box
           position="absolute"
@@ -55,19 +51,19 @@ export default function AvatarVisualizacao() {
             transform: 'translate(-50%, -50%)',
             zIndex: 10,
             textAlign: 'center',
-            backgroundColor: 'rgba(255,255,255,0.1)',
+            backgroundColor: 'rgba(86, 47, 160, 0.85)',
             p: 2,
             borderRadius: 4,
-            boxShadow: '0 0 30px 10px rgba(154,31,255,0.6)',
+            boxShadow: '0 0 30px 10px rgba(0, 0, 0, 0.6)',
             backdropFilter: 'blur(8px)'
           }}
         >
           <img
-            src={registro?.img || require('../assets/avatar.png')}
+            src={registro?.img || require('../assets/users/avatar.png')}
             alt="Avatar"
-            style={{ width: 180, height: 180, borderRadius: '50%', objectFit: 'cover', marginBottom: 8 }}
+            style={{ width: 380, height: 380, borderRadius: '10%', objectFit: 'cover', marginBottom: 8 }}
           />
-          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#fff' }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#f1f1f1' }}>
             Avatar da Semana: {avatarNome}
           </Typography>
         </Box>
@@ -76,7 +72,6 @@ export default function AvatarVisualizacao() {
       {/* Colunas dos elementos */}
       {ELEMENTOS.map(({ key, label, fundo }, index) => {
         const nome = registro?.[key] || 'Nenhum';
-        // Pega a imagem correspondente do funcionário na tabela de funcionários
         const funcionario = funcionarios.find(f => f.nome === nome) || { img: require('../assets/users/nenhum.png') };
 
         return (
@@ -120,16 +115,6 @@ export default function AvatarVisualizacao() {
           </Box>
         );
       })}
-
-      {/* Rodapé opcional */}
-      <Box
-        position="absolute"
-        bottom={10}
-        left={10}
-        sx={{ color: '#fff', opacity: 0.6 }}
-      >
-        <Typography variant="caption">Dinâmica realizada em: {dataFormatada}</Typography>
-      </Box>
     </Box>
   );
 }
