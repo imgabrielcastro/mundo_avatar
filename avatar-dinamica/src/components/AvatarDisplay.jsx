@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Button } from '@mui/material';
 import { supabase } from '../services/supabaseClient';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@uidotdev/usehooks';
@@ -14,10 +14,13 @@ const ELEMENTOS = [
 export default function AvatarVisualizacao() {
   const [registro, setRegistro] = useState(null);
   const [funcionarios, setFuncionarios] = useState([]);
+  const [relatorio, setRelatorio] = useState([]);
+  const [showRelatorio, setShowRelatorio] = useState(false);
   const { width, height } = useWindowSize();
 
   useEffect(() => {
     const fetchData = async () => {
+      // Pega a dinâmica mais recente
       const { data } = await supabase
         .from('dinamica_avatar')
         .select('*')
@@ -28,6 +31,7 @@ export default function AvatarVisualizacao() {
     };
 
     const fetchFuncionarios = async () => {
+      // Pega todos os funcionários da tabela
       const { data } = await supabase.from('funcionarios').select('nome, img');
       if (data) setFuncionarios(data);
     };
@@ -37,6 +41,46 @@ export default function AvatarVisualizacao() {
   }, []);
 
   const avatarNome = registro?.avatar;
+
+  // Função para gerar o relatório de campeões
+  const gerarRelatorio = async () => {
+    // Contagem de vitórias por funcionário para cada elemento
+    const { data, error } = await supabase
+      .from('dinamica_avatar')
+      .select('fogo, agua, terra, ar')
+      .eq('fogo', 'fogo') // Filtrando para pegar os vencedores
+      .eq('agua', 'agua')
+      .eq('terra', 'terra')
+      .eq('ar', 'ar');
+
+    if (error) {
+      console.error('Erro ao gerar relatório:', error);
+    } else {
+      const relatorioTemp = [];
+
+      funcionarios.forEach((funcionario) => {
+        const contador = {
+          nome: funcionario.nome,
+          fogo: 0,
+          agua: 0,
+          terra: 0,
+          ar: 0,
+        };
+
+        data.forEach((item) => {
+          if (item.fogo === funcionario.nome) contador.fogo += 1;
+          if (item.agua === funcionario.nome) contador.agua += 1;
+          if (item.terra === funcionario.nome) contador.terra += 1;
+          if (item.ar === funcionario.nome) contador.ar += 1;
+        });
+
+        relatorioTemp.push(contador);
+      });
+
+      setRelatorio(relatorioTemp);
+      setShowRelatorio(true); // Mostrar o relatório
+    }
+  };
 
   return (
     <Box sx={{ width: '100vw', height: '100vh', display: 'flex', position: 'relative' }}>
@@ -55,7 +99,7 @@ export default function AvatarVisualizacao() {
             p: 2,
             borderRadius: 4,
             boxShadow: '0 0 30px 10px rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(8px)',
           }}
         >
           <img
@@ -90,7 +134,7 @@ export default function AvatarVisualizacao() {
               position: 'relative',
               color: '#fff',
               textShadow: '2px 2px 4px #000',
-              borderLeft: index !== 0 ? '2px solid rgba(255, 255, 255, 0.3)' : 'none'
+              borderLeft: index !== 0 ? '2px solid rgba(255, 255, 255, 0.3)' : 'none',
             }}
           >
             <Typography variant="h4" fontWeight="bold" sx={{ textTransform: 'uppercase' }}>
@@ -107,7 +151,7 @@ export default function AvatarVisualizacao() {
                   borderRadius: '50%',
                   border: '6px solid white',
                   objectFit: 'cover',
-                  mb: 1
+                  mb: 1,
                 }}
               />
               <Typography variant="h6" fontWeight="bold">{nome}</Typography>
@@ -115,6 +159,82 @@ export default function AvatarVisualizacao() {
           </Box>
         );
       })}
+
+      {/* Botão para gerar o relatório */}
+      <Box sx={{ position: 'absolute', bottom: '5%', right: '43%' }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={gerarRelatorio}
+          sx={{
+            padding: '10px 20px',
+            backgroundColor: '#9A1FFF',
+            color: '#fff',
+            '&:hover': { backgroundColor: '#8014d8' },
+          }}
+        >
+          Gerar Relatório de Campeões
+        </Button>
+      </Box>
+
+      {/* Exibir o relatório */}
+      {showRelatorio && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '10%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '90%',
+            maxWidth: 1200,
+            backgroundColor: '#fff',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.23)',
+            padding: '16px',
+            zIndex: 20,
+          }}
+        >
+          <Typography variant="h4" sx={{ textAlign: 'center', mb: 3}}>
+            Relatório de Campeões
+          </Typography>
+          <Box sx={{ maxHeight: 600, overflowY: 'auto' }}>
+            {relatorio.map((champion, index) => (
+              <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 5 }}>
+                <Typography variant="h6" sx={{ flex: 1 }}>
+                  {champion.nome}
+                </Typography>
+                <Typography variant="h6" sx={{ flex: 1 }}>
+                  {champion.fogo}x FOGO
+                </Typography>
+                <Typography variant="h6" sx={{ flex: 1 }}>
+                  {champion.agua}x ÁGUA
+                </Typography>
+                <Typography variant="h6" sx={{ flex: 1 }}>
+                  {champion.terra}x TERRA
+                </Typography>
+                <Typography variant="h6" sx={{ flex: 1 }}>
+                  {champion.ar}x AR
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setShowRelatorio(false)}
+              sx={{
+                backgroundColor: '#8014d8',
+                color: '#fff',
+                '&:hover': { backgroundColor: '#9A1FFF' },
+              }}
+            >
+              Fechar Relatório
+            </Button>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }
