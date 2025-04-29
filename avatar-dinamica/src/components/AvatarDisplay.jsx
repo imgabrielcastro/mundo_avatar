@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, Divider } from '@mui/material';
 import { supabase } from '../services/supabaseClient';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@uidotdev/usehooks';
@@ -20,7 +20,6 @@ export default function AvatarVisualizacao() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Pega a dinâmica mais recente
       const { data } = await supabase
         .from('dinamica_avatar')
         .select('*')
@@ -31,8 +30,7 @@ export default function AvatarVisualizacao() {
     };
 
     const fetchFuncionarios = async () => {
-      // Pega todos os funcionários da tabela
-      const { data } = await supabase.from('funcionarios').select('nome, img');
+      const { data } = await supabase.from('funcionarios').select('nome, img, avatar');
       if (data) setFuncionarios(data);
     };
 
@@ -42,43 +40,69 @@ export default function AvatarVisualizacao() {
 
   const avatarNome = registro?.avatar;
 
-  // Função para gerar o relatório de campeões
   const gerarRelatorio = async () => {
-    // Contagem de vitórias por funcionário para cada elemento
     const { data, error } = await supabase
       .from('dinamica_avatar')
-      .select('fogo, agua, terra, ar')
-      .eq('fogo', 'fogo') // Filtrando para pegar os vencedores
-      .eq('agua', 'agua')
-      .eq('terra', 'terra')
-      .eq('ar', 'ar');
+      .select('fogo, agua, terra, ar');
 
     if (error) {
       console.error('Erro ao gerar relatório:', error);
     } else {
-      const relatorioTemp = [];
+      const contagemVencedores = {};
 
-      funcionarios.forEach((funcionario) => {
-        const contador = {
-          nome: funcionario.nome,
-          fogo: 0,
-          agua: 0,
-          terra: 0,
-          ar: 0,
-        };
-
-        data.forEach((item) => {
-          if (item.fogo === funcionario.nome) contador.fogo += 1;
-          if (item.agua === funcionario.nome) contador.agua += 1;
-          if (item.terra === funcionario.nome) contador.terra += 1;
-          if (item.ar === funcionario.nome) contador.ar += 1;
+      data.forEach((item) => {
+        ['fogo', 'agua', 'terra', 'ar'].forEach((elemento) => {
+          const vencedor = item[elemento];
+          if (vencedor) {
+            if (!contagemVencedores[vencedor]) {
+              contagemVencedores[vencedor] = { fogo: 0, agua: 0, terra: 0, ar: 0 };
+            }
+            contagemVencedores[vencedor][elemento]++;
+          }
         });
-
-        relatorioTemp.push(contador);
       });
 
-      setRelatorio(relatorioTemp);
-      setShowRelatorio(true); // Mostrar o relatório
+      const vencedoresArray = Object.keys(contagemVencedores).map((nome) => ({
+        nome,
+        ...contagemVencedores[nome],
+        total: Object.values(contagemVencedores[nome]).reduce((sum, count) => sum + count, 0),
+      }));
+
+      vencedoresArray.sort((a, b) => b.total - a.total);
+
+      vencedoresArray.forEach((vencedor) => {
+        const funcionario = funcionarios.find(f => f.nome === vencedor.nome);
+        vencedor.avatar = funcionario?.avatar || ''; // Adicionando o avatar
+        vencedor.img = funcionario?.img || ''; // Foto do funcionário
+      });
+
+      setRelatorio(vencedoresArray);
+      setShowRelatorio(true);
+    }
+  };
+
+  const renderMedalhas = (index) => {
+    switch (index) {
+      case 0:
+        return (
+          <Box sx={{ display: 'inline-block', backgroundColor: 'gold', padding: '5px 15px', borderRadius: '50px', color: '#fff', fontWeight: 'bold' }}>
+            Top 1 (Ouro)
+          </Box>
+        );
+      case 1:
+        return (
+          <Box sx={{ display: 'inline-block', backgroundColor: 'silver', padding: '5px 15px', borderRadius: '50px', color: '#fff', fontWeight: 'bold' }}>
+            Top 2 (Prata)
+          </Box>
+        );
+      case 2:
+        return (
+          <Box sx={{ display: 'inline-block', backgroundColor: '#cd7f32', padding: '5px 15px', borderRadius: '50px', color: '#fff', fontWeight: 'bold' }}>
+            Top 3 (Bronze)
+          </Box>
+        );
+      default:
+        return null;
     }
   };
 
@@ -113,7 +137,6 @@ export default function AvatarVisualizacao() {
         </Box>
       )}
 
-      {/* Colunas dos elementos */}
       {ELEMENTOS.map(({ key, label, fundo }, index) => {
         const nome = registro?.[key] || 'Nenhum';
         const funcionario = funcionarios.find(f => f.nome === nome) || { img: require('../assets/users/nenhum.png') };
@@ -194,27 +217,41 @@ export default function AvatarVisualizacao() {
             zIndex: 20,
           }}
         >
-          <Typography variant="h4" sx={{ textAlign: 'center', mb: 3}}>
+          <Typography variant="h4" sx={{ textAlign: 'center', mb: 3, color: '#8014d8', fontWeight: 'bold' }}>
             Relatório de Campeões
           </Typography>
+          <Divider sx={{ mb: 2 }} />
           <Box sx={{ maxHeight: 600, overflowY: 'auto' }}>
             {relatorio.map((champion, index) => (
-              <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', mb: 5 }}>
-                <Typography variant="h6" sx={{ flex: 1 }}>
+              <Box
+                key={index}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  mb: 5,
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid #9A1FFF',
+                  backgroundColor: '#f7f0ff',
+                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+                }}
+              >
+                <Typography variant="h6" sx={{ flex: 1, color: '#9A1FFF' }}>
                   {champion.nome}
                 </Typography>
-                <Typography variant="h6" sx={{ flex: 1 }}>
+                <Typography variant="h6" sx={{ flex: 1, color: '#9A1FFF' }}>
                   {champion.fogo}x FOGO
                 </Typography>
-                <Typography variant="h6" sx={{ flex: 1 }}>
+                <Typography variant="h6" sx={{ flex: 1, color: '#9A1FFF' }}>
                   {champion.agua}x ÁGUA
                 </Typography>
-                <Typography variant="h6" sx={{ flex: 1 }}>
+                <Typography variant="h6" sx={{ flex: 1, color: '#9A1FFF' }}>
                   {champion.terra}x TERRA
                 </Typography>
-                <Typography variant="h6" sx={{ flex: 1 }}>
+                <Typography variant="h6" sx={{ flex: 1, color: '#9A1FFF' }}>
                   {champion.ar}x AR
                 </Typography>
+                {renderMedalhas(index)} {/* Aplica a medalha ao vencedor */}
               </Box>
             ))}
           </Box>
