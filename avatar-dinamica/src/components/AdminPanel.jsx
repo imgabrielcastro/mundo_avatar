@@ -15,6 +15,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { supabase } from '../services/supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminPanel() {
   const [tab, setTab] = useState(0); // "Cadastrar Dinâmica" é a aba aberta por padrão
@@ -32,10 +33,19 @@ export default function AdminPanel() {
   const [fotoFuncionarioUrl, setFotoFuncionarioUrl] = useState('');
   const [loading, setLoading] = useState(false); // Para controlar o estado de loading durante o upload
 
+  const navigate = useNavigate();
+
+  // Verifica se o usuário tem acesso ao painel de admin
   useEffect(() => {
-    fetchRegistros();
-    fetchFuncionarios();
-  }, []);
+    const isAdmin = localStorage.getItem('isAdmin');
+    if (!isAdmin || isAdmin !== 'true') {
+      alert('Você não tem permissão para acessar esta página!');
+      navigate('/login'); // Redireciona para a página de login
+    } else {
+      fetchRegistros();
+      fetchFuncionarios();
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (
@@ -80,6 +90,7 @@ export default function AdminPanel() {
         nome: nomeFuncionario,
         img: fotoFuncionarioUrl,
       }]);
+
 
     setLoading(false);
 

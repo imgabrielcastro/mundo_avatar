@@ -30,7 +30,7 @@ export default function AvatarVisualizacao() {
     };
 
     const fetchFuncionarios = async () => {
-      const { data } = await supabase.from('funcionarios').select('nome, img, avatar');
+      const { data } = await supabase.from('funcionarios').select('nome, img');
       if (data) setFuncionarios(data);
     };
 
@@ -40,11 +40,10 @@ export default function AvatarVisualizacao() {
 
   const avatarNome = registro?.avatar;
 
-  // Função para gerar o relatório de campeões
   const gerarRelatorio = async () => {
     const { data, error } = await supabase
       .from('dinamica_avatar')
-      .select('fogo, agua, terra, ar, avatar'); // Adicionando avatar aqui
+      .select('fogo, agua, terra, ar, avatar'); 
 
     if (error) {
       console.error('Erro ao gerar relatório:', error);
@@ -63,23 +62,25 @@ export default function AvatarVisualizacao() {
         });
       });
 
-      // Transformando o objeto de contagem em um array para fácil manipulação
       const vencedoresArray = Object.keys(contagemVencedores).map((nome) => ({
         nome,
         ...contagemVencedores[nome],
-        avatar: contagemVencedores[nome].avatar,  // Adicionando o avatar
-        total: Object.values(contagemVencedores[nome]).reduce((sum, count) => sum + count, 0), // Total de vitórias
+        avatar: contagemVencedores[nome].avatar, 
+        total: Object.values(contagemVencedores[nome]).reduce((sum, count) => sum + count, 0), 
       }));
 
-      // Ordena pela quantidade de vitórias
       vencedoresArray.sort((a, b) => b.total - a.total);
 
+      vencedoresArray.forEach((vencedor) => {
+        const funcionario = funcionarios.find(f => f.nome === vencedor.nome);
+        vencedor.img = funcionario?.img || '';
+      });
+
       setRelatorio(vencedoresArray);
-      setShowRelatorio(true); // Mostrar o relatório
+      setShowRelatorio(true);  
     }
   };
 
-  // Renderiza a medalha dependendo da posição (Top 1, 2, 3)
   const renderMedalhas = (index) => {
     switch (index) {
       case 0:
@@ -106,9 +107,10 @@ export default function AvatarVisualizacao() {
   };
 
   return (
-    <Box sx={{ width: '100vw', height: '100vh', display: 'flex', position: 'relative', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <Box sx={{ width: '100vw', height: '100vh', display: 'flex', position: 'relative', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
       {avatarNome && <Confetti width={width} height={height} numberOfPieces={300} />}
 
+      {/* Avatar Section */}
       {avatarNome && (
         <Box
           position="absolute"
@@ -136,10 +138,11 @@ export default function AvatarVisualizacao() {
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', flex: 1 }}>
+      {/* Elementos Section */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', flex: 1, width: '100%' }}>
         {ELEMENTOS.map(({ key, label, fundo }, index) => {
           const nome = registro?.[key] || 'Nenhum';
-          const funcionario = funcionarios.find(f => f.nome === nome) || { img: require('../assets/users/nenhum.png') };
+          const funcionario = funcionarios.find(f => f.nome === nome) || { img: 'https://via.placeholder.com/150' };
 
           return (
             <Box
@@ -185,7 +188,7 @@ export default function AvatarVisualizacao() {
         })}
       </Box>
 
-      {/* Botão para gerar o relatório */}
+      {/* Button to generate report */}
       <Box sx={{ position: 'absolute', bottom: '5%', right: '43%' }}>
         <Button
           variant="contained"
@@ -202,7 +205,7 @@ export default function AvatarVisualizacao() {
         </Button>
       </Box>
 
-      {/* Exibir o relatório */}
+      {/* Show the report */}
       {showRelatorio && (
         <Box
           sx={{
@@ -220,12 +223,12 @@ export default function AvatarVisualizacao() {
             overflowX: 'auto',
           }}
         >
-          <Typography variant="h4" sx={{ textAlign: 'center', mb: 3, color: '#8014d8', fontWeight: 'bold'}}>
+          <Typography variant="h4" sx={{ textAlign: 'center', mb: 3, color: '#8014d8', fontWeight: 'bold' }}>
             Relatório de Campeões
           </Typography>
-          <Divider sx={{ mb: 2}} />
+          <Divider sx={{ mb: 2 }} />
 
-<TableContainer sx={{ marginLeft: 'auto', marginRight: 'auto', paddingLeft: '20px' }}>
+          <TableContainer sx={{ marginLeft: 'auto', marginRight: 'auto', paddingLeft: '20px' }}>
   <Table>
     <TableHead>
       <TableRow>
@@ -240,20 +243,22 @@ export default function AvatarVisualizacao() {
     </TableHead>
     <TableBody>
       {relatorio.map((champion, index) => (
-        <TableRow key={index}>
-          <TableCell>{champion.nome}</TableCell>
-          <TableCell>{champion.fogo}x</TableCell>
-          <TableCell>{champion.agua}x</TableCell>
-          <TableCell>{champion.terra}x</TableCell>
-          <TableCell>{champion.ar}x</TableCell>
-          <TableCell>{champion.avatar || '0'}x</TableCell>
-          <TableCell>{renderMedalhas(index)}</TableCell>
+        <TableRow 
+          key={index} 
+          sx={{ marginLeft: '50px' }} // Adicionando o padding aqui para mover a linha
+        >
+          <TableCell align="center">{champion.nome}</TableCell>
+          <TableCell align="center">{champion.fogo}x</TableCell>
+          <TableCell align="center">{champion.agua}x</TableCell>
+          <TableCell align="center">{champion.terra}x</TableCell>
+          <TableCell align="center">{champion.ar}x</TableCell>
+          <TableCell align="center">{champion.avatar || '0'}x</TableCell>
+          <TableCell align="center">{renderMedalhas(index)}</TableCell>
         </TableRow>
       ))}
     </TableBody>
   </Table>
 </TableContainer>
-
 
           <Box sx={{ textAlign: 'center', mt: 2 }}>
             <Button
