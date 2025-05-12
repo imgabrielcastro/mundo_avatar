@@ -18,7 +18,7 @@ import { supabase } from '../services/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminPanel() {
-  const [tab, setTab] = useState(0); // "Cadastrar Dinâmica" é a aba aberta por padrão
+  const [tab, setTab] = useState(0);
   const [fogo, setFogo] = useState('');
   const [agua, setAgua] = useState('');
   const [terra, setTerra] = useState('');
@@ -31,16 +31,15 @@ export default function AdminPanel() {
   const [funcionarios, setFuncionarios] = useState([]);
   const [nomeFuncionario, setNomeFuncionario] = useState('');
   const [fotoFuncionarioUrl, setFotoFuncionarioUrl] = useState('');
-  const [loading, setLoading] = useState(false); // Para controlar o estado de loading durante o upload
+  const [loading, setLoading] = useState(false); 
 
   const navigate = useNavigate();
 
-  // Verifica se o usuário tem acesso ao painel de admin
   useEffect(() => {
     const isAdmin = localStorage.getItem('isAdmin');
     if (!isAdmin || isAdmin !== 'true') {
       alert('Você não tem permissão para acessar esta página!');
-      navigate('/login'); // Redireciona para a página de login
+      navigate('/login');
     } else {
       fetchRegistros();
       fetchFuncionarios();

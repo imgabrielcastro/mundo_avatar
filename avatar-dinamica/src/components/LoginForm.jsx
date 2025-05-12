@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, Paper, Link, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../services/supabaseClient';  // Supondo que você já tenha configurado o supabase
 import Quacks from '../assets/users/Quacks.png';
 import GitHubIcon from '@mui/icons-material/GitHub';
 
@@ -10,13 +11,25 @@ export default function LoginForm() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault(); // impede reload da página
-    if (username === 'admin' && password === 'admin123') {
-      localStorage.setItem('isAdmin', 'true'); // Salva no localStorage
-      navigate('/admin'); // Redireciona para a tela de admin
-    } else {
-      setError('Usuário ou senha inválidos'); // Exibe erro
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const { data, error } = await supabase
+        .from('admin')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .single(); 
+
+      if (error || !data) {
+        setError('Usuário ou senha inválidos');
+      } else {
+        localStorage.setItem('isAdmin', 'true');
+        navigate('/admin');
+      }
+    } catch (err) {
+      setError('Erro ao tentar fazer login');
+      console.error(err);
     }
   };
 
@@ -86,7 +99,6 @@ export default function LoginForm() {
         </form>
       </Paper>
 
-      {/* Balãozinho do mestre Quacks */}
       <Box
         position="absolute"
         bottom={480}
@@ -116,12 +128,10 @@ export default function LoginForm() {
         </Typography>
       </Box>
 
-      {/* Imagem do pato */}
       <Box position="absolute" bottom={10} right={10}>
         <img src={Quacks} alt="Quacks, o Líder" width={320} />
       </Box>
 
-      {/* GitHub Link */}
       <Box
         position="absolute"
         bottom={10}

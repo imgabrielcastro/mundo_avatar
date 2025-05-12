@@ -245,7 +245,7 @@ export default function AvatarVisualizacao() {
       {relatorio.map((champion, index) => (
         <TableRow 
           key={index} 
-          sx={{ marginLeft: '50px' }} // Adicionando o padding aqui para mover a linha
+          sx={{ marginLeft: '50px' }}
         >
           <TableCell align="center">{champion.nome}</TableCell>
           <TableCell align="center">{champion.fogo}x</TableCell>
